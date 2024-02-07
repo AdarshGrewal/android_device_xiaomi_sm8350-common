@@ -27,7 +27,7 @@ $(call inherit-product, frameworks/native/build/phone-xhdpi-6144-dalvik-heap.mk)
 $(call inherit-product, vendor/xiaomi/sm8450-common/sm8450-common-vendor.mk)
 
 # Platform
-TARGET_BOARD_PLATFORM := taro
+TARGET_BOARD_PLATFORM := parrot
 
 # A/B
 AB_OTA_POSTINSTALL_CONFIG += \
@@ -155,7 +155,6 @@ PRODUCT_PACKAGES += \
     android.hardware.camera.provider@2.7.vendor \
     camera.device@1.0-impl \
     libcamera2ndk_vendor \
-    vendor.qti.hardware.camera.aon@1.0.vendor \
     vendor.qti.hardware.camera.postproc@1.0.vendor
 
 PRODUCT_PACKAGES += \

@@ -429,6 +429,27 @@ esac
 #
 # Make modem config folder and copy firmware config to that folder for RIL
 #
+
+# wait for mbnota process finished, Max wait time 0.5 * 20 seconds
+
+retry_time=0
+while [ "$retry_time" -lt 20 ]
+do
+    log -p i -t "init.qcom.sh" "retry_time is $retry_time"
+    MBNOTAPID=`getprop init.svc.vendor.mbnota`
+    log -p i -t "init.qcom.sh" "MBNOTAPID is $MBNOTAPID"
+    if [ "$MBNOTAPID" == "running" ]; then
+        log -p i -t "init.qcom.sh" "process is exist"
+        let retry_time++
+        sleep 0.5
+        continue
+    else
+        log -p i -t "init.qcom.sh" "process is not exist"
+        break
+    fi
+done
+
+
 if [ -f /data/vendor/mbnconfig/image/modem_pr/mcfg/configs/mbn_build_utc.txt ]; then
     # for mbnota design
     if [ -f /data/vendor/modem_config/mbn_build_utc.txt ]; then
@@ -443,10 +464,12 @@ if [ -f /data/vendor/mbnconfig/image/modem_pr/mcfg/configs/mbn_build_utc.txt ]; 
         chmod g+w -R /data/vendor/modem_config/*
         rm -rf /data/vendor/modem_config/*
         # preserve the read only mode for all subdir and files
+        log -p i -t "init.qcom.sh" "copy start"
         cp --preserve=m -dr /data/vendor/mbnconfig/image/modem_pr/mcfg/configs/* /data/vendor/modem_config
         cp --preserve=m -d /data/vendor/mbnconfig/image/modem_pr/mbn_ota.txt /data/vendor/modem_config/
         # the group must be root, otherwise this script could not add "W" for group recursively
         chown -hR radio.root /data/vendor/modem_config/*
+        log -p i -t "init.qcom.sh" "copy end"
     fi
 else
     # for legacy design

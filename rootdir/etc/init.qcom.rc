@@ -77,6 +77,8 @@ on early-boot
     exec u:r:vendor_qti_init_shell:s0 -- /vendor/bin/init.qti.can.sh
     setprop ro.sf.lcd_density ${vendor.display.lcd_density}
     setprop vendor.display.mixer_resolution ${persist.sys.miui_resolution}
+    mkdir /data/vendor/modem 0777 root root
+    mkdir /data/vendor/modem/diag_logs 0777 root root
 
     chown system system /mnt/vendor/persist/data/pfm/licenses
     chmod 0775 /mnt/vendor/persist/data/pfm/licenses
@@ -126,6 +128,7 @@ on boot
     # modem
     chmod 0777 /dev/smd8
     chown radio radio /dev/smd8
+    mkdir /data/vendor/modem 0777 radio radio
 
     # This location is used by QCRIL to host UNIX domain
     # socket files used for internal IPC within QCRIL
@@ -251,6 +254,10 @@ on post-fs-data
     mkdir /data/vendor/camera/offlinelog 0777 cameraserver audio
     chmod 0666 /dev/camlog
 
+    #logturbo
+    chmod 0666 /dev/mi_exception_log
+    chown system system /proc/mi_log/binder_delay
+    chown system system /proc/mi_log/delay
 
     #Create directory for tftp
     mkdir /data/vendor/tombstones 0771 system system
@@ -388,6 +395,12 @@ on post-fs-data
     mkdir /data/vendor/qrtr 0775 system system
 
 service nqnfcinfo /system/vendor/bin/nqnfcinfo
+    class late_start
+    group nfc
+    user system
+    oneshot
+
+service ntag5_tool /vendor/bin/ntag5_tool
     class late_start
     group nfc
     user system
@@ -790,6 +803,25 @@ service diag_mdlog_start /vendor/bin/diag_mdlog -q 0x2006 -j 1 -u -c -i -n 20 -s
     disabled
     oneshot
 
+service vendor.diag.tcpdump /vendor/bin/tcpdump -i any -W 3 -nnXSs 0 -w /data/vendor/modem/diag_logs/tcpdump.pcap -Z system --time-interval 11
+    class main
+    user root
+    group root wifi
+    disabled
+    oneshot
+
+on property:persist.logd.diag.tcpdump=true
+    start vendor.diag.tcpdump
+
+on property:persist.logd.diag.tcpdump=false
+    stop vendor.diag.tcpdump
+
+on boot && property:persist.logd.diag.bootup=* && property:persist.logd.diag.networklog=*
+    start vendor.diag.tcpdump
+
+on boot && property:persist.logd.diag.bootup=* && property:persist.logd.diag.mobilelog=*
+    start logcatlog
+
 service diag_mdlog_stop /vendor/bin/diag_mdlog -k
     class late_start
     user shell
@@ -797,7 +829,7 @@ service diag_mdlog_stop /vendor/bin/diag_mdlog -k
     disabled
     oneshot
 
-service diag_mdlog_auto_start /vendor/bin/diag_mdlog -c -n 50
+service diag_mdlog_auto_start /vendor/bin/diag_mdlog -q 0x2006 -j 1 -u -c -i -n 50
     class late_start
     user system
     group system oem_2902 oem_2905 sdcard_rw sdcard_r media_rw
@@ -810,26 +842,26 @@ service diag_mdlog_auto_stop /vendor/bin/diag_mdlog -k
     group system oem_2902 oem_2905 sdcard_rw sdcard_r media_rw
     disabled
     oneshot
-    
+
 on property:persist.vendor.radio.diag_log_trriger=modem
     setprop debug.offline_log.enable true
     setprop debug.offline_log.module ${persist.vendor.radio.diag_log_trriger}
-    start diag_mdlog_start
+    start diag_mdlog_auto_start
 
 on property:persist.vendor.radio.diag_log_trriger=audio
     setprop debug.offline_log.enable true
     setprop debug.offline_log.module ${persist.vendor.radio.diag_log_trriger}
-    start diag_mdlog_start
+    start diag_mdlog_auto_start
 
 on property:persist.vendor.radio.diag_log_trriger=gps
     setprop debug.offline_log.enable true
     setprop debug.offline_log.module ${persist.vendor.radio.diag_log_trriger}
-    start diag_mdlog_start
+    start diag_mdlog_auto_start
 
 on property:persist.vendor.radio.diag_log_trriger=sensor
     setprop debug.offline_log.enable true
     setprop debug.offline_log.module ${persist.vendor.radio.diag_log_trriger}
-    start diag_mdlog_start
+    start diag_mdlog_auto_start
 
 service qlogd /system/xbin/qlogd
     socket qlogd stream 0662 system system
