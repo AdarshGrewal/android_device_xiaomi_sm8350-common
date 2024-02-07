@@ -537,23 +537,6 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.wifi.rtt.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.rtt.xml \
     frameworks/native/data/etc/android.hardware.wifi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.xml
 
-TARGET_WLAN_CHIP := qca6490 qca6750
-
-WLAN_CHIPSET := qca_cld3
-
-# Force chip-specific DLKM name
-TARGET_MULTI_WLAN := true
-
-#WPA
-WPA := wpa_cli
-
-# Package chip specific ko files if TARGET_WLAN_CHIP is defined.
-ifneq ($(TARGET_WLAN_CHIP),)
-	PRODUCT_PACKAGES += $(foreach chip, $(TARGET_WLAN_CHIP), $(WLAN_CHIPSET)_$(chip).ko)
-else
-	PRODUCT_PACKAGES += $(WLAN_CHIPSET)_wlan.ko
-endif
-
 # WiFi Display
 PRODUCT_PACKAGES += \
     libnl \
